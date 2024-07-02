@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  mariadb:
+    build: ./requirements/mariadb
+    image: debian:bookworm
+
+    volumes:
+      - db-volume:/var/lib/mysql
+    expose:
+      - "3306"
+    networks:
+      - intra
+
+    tty: true
+    restart: always
+
+  nginx:
+    build: ./requirements/nginx
+    image: debian:bookworm
+
+    ports:
+      - "443:443"
+    volumes:
+      - wp-volume:/var/www
+    networks:
+      - intra
+
+    tty: true
+    restart: always
+
+  wordpress:
+    build: ./requirements/wordpress
+    image: debian:bookworm
+
+    volumes:
+      - wp-volume:/var/www/html
+    expose:
+      - "9000"
+    networks:
+      - intra
+    tty: true
+    restart: always
+
+volumes:
+  db-volume:
+    driver: local
+    driver-opts:
+      device: ~/data/db-data
+      type: none
+      o: bind
+  wp-volume:
+    driver: local
+    driver-opts:
+      device: ~/data/wp-data
+      type: none
+      o: bind
+
+networks:
+  intra:
+    driver: bridge
