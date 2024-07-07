@@ -1,14 +1,33 @@
 version: '3'
 
+volumes:
+  db-volume:
+    driver: local
+    driver_opts:
+      device: /Users/doukim/data/db-data
+      type: none
+      o: bind
+  wp-volume:
+    driver: local
+    driver_opts:
+      device: /Users/doukim/data/wp-data
+      type: none
+      o: bind
+
+networks:
+  intra:
+    driver: bridge
+
 services:
   mariadb:
+    container_name: mariadb
     build: ./requirements/mariadb
-    image: debian:bookworm
+    image: mariadb:42
 
     volumes:
       - db-volume:/var/lib/mysql
-    expose:
-      - "3306"
+    env_file:
+      - .env
     networks:
       - intra
 
@@ -16,9 +35,12 @@ services:
     restart: always
 
   nginx:
+    container_name: nginx
     build: ./requirements/nginx
-    image: debian:bookworm
+    image: nginx:42
 
+    depends_on:
+      - wordpress
     ports:
       - "443:443"
     volumes:
@@ -30,32 +52,19 @@ services:
     restart: always
 
   wordpress:
+    container_name: wordpress
     build: ./requirements/wordpress
-    image: debian:bookworm
+    image: wordpress:42
 
+    depends_on:
+      - mariadb
     volumes:
       - wp-volume:/var/www/html
     expose:
       - "9000"
+    env_file:
+      - .env
     networks:
       - intra
     tty: true
     restart: always
-
-volumes:
-  db-volume:
-    driver: local
-    driver-opts:
-      device: ~/data/db-data
-      type: none
-      o: bind
-  wp-volume:
-    driver: local
-    driver-opts:
-      device: ~/data/wp-data
-      type: none
-      o: bind
-
-networks:
-  intra:
-    driver: bridge
